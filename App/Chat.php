@@ -26,14 +26,17 @@ class Chat implements MessageComponentInterface {
         /*echo sprintf('Connection %d sending message "%s" to %d other connection%s' . "\n"
             , $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');*/
         //1º Mandar los amigos del pive para que haga pum y ya sabe a quien tiene que dar mensaje.
+        //var_dump($msg);
         $message = json_decode($msg, true);
         sleep(1);
+        /*echo "MENSAJE RECIVIDO \n";
+        var_dump($message);*/
         if($message['type']==='init'){
             $this->permissions[] = [
                 'user' => $message['user'],
                 'resource' => $from->resourceId
             ];
-            var_dump($this->permissions);
+            //var_dump($this->permissions);
         }
         $reciver = '';
         if($message['type']==='chat'){      
@@ -49,21 +52,20 @@ class Chat implements MessageComponentInterface {
                     return $element;
                 }
             });
-            $key = key($reciver);
-            //SE GUARDA EN LA BASE DE DATOS EN CASO DE
             (new Model())->queryExec("INSERT INTO chat(id_hablante, id_oyente, mensaje) values (?, ?, ?)", 
                 [$message['data']['id_hablante'], $message['data']['id_oyente'], $message['data']['message']]);
-            echo "¿quien lo recibe?\n";
-            var_dump($reciver);
-            echo "estado de la lista\n";
-            foreach ($this->clients as $client) {
-                echo 'tipo de mensaje '.$message['type']."\n";
-                echo 'cliente '.$client->resourceId."\n";
-                echo "receptor ".$reciver[$key]['resource']."\n";
-                //Implementada la lógica para el tipo de mensaje que tiene que ser enviado y a la persona conectada que se tiene que enviar.
-                if ($message['type']==='chat' && $client->resourceId == $reciver[$key]['resource']) {
-                    // The sender is not the receiver, send to each client connected
-                    $client->send($msg);
+            //echo "estado de la lista\n";
+            if(!empty($reciver)){
+                $key = key($reciver);
+                foreach ($this->clients as $client) {
+                    /*echo 'tipo de mensaje '.$message['type']."\n";
+                    echo 'cliente '.$client->resourceId."\n";
+                    echo "receptor ".$reciver[$key]['resource']."\n";*/
+                    //Implementada la lógica para el tipo de mensaje que tiene que ser enviado y a la persona conectada que se tiene que enviar.
+                    if ($message['type']==='chat' && $client->resourceId == $reciver[$key]['resource']) {
+                        // The sender is not the receiver, send to each client connected
+                        $client->send($msg);
+                    }
                 }
             }
         }
@@ -72,7 +74,13 @@ class Chat implements MessageComponentInterface {
     //se cierra conexión
     public function onClose(ConnectionInterface $conn) {
         // The connection is closed, remove it, as we can no longer send it messages
-        unset($this->permissions[$conn->resourceId]);
+        $resourceId = $conn->resourceId;
+        $key = key(array_filter($this->permissions, function($element) use($resourceId){
+            if($element['resource']===$resourceId){
+                return $element;
+            }
+        }));
+        unset($this->permissions[$key]);
         $this->clients->detach($conn);
         echo "Connection {$conn->resourceId} has disconnected\n";
     }
