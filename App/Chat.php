@@ -29,8 +29,8 @@ class Chat implements MessageComponentInterface {
         //var_dump($msg);
         $message = json_decode($msg, true);
         sleep(1);
-        /*echo "MENSAJE RECIVIDO \n";
-        var_dump($message);*/
+        echo "MENSAJE RECIVIDO \n";
+        var_dump($message);
         if($message['type']==='init'){
             $this->permissions[] = [
                 'user' => $message['user'],
@@ -40,7 +40,7 @@ class Chat implements MessageComponentInterface {
         }
         $reciver = '';
         if($message['type']==='chat'){      
-            $id_oyente = $message['data']['id_hablante'];
+            $id_oyente = $message['data']['id_oyente'];
             echo "lo que estoy recibiendo\n";
             var_dump($message);
             echo "Oyente \n";
