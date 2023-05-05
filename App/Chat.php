@@ -27,16 +27,24 @@ class Chat implements MessageComponentInterface {
             , $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');*/
         //1º Mandar los amigos del pive para que haga pum y ya sabe a quien tiene que dar mensaje.
         //var_dump($msg);
-        $message = json_decode($msg, true);
-        sleep(1);
-        echo "MENSAJE RECIVIDO \n";
+        echo "MENSAJE RECIBIDO \n";
+        var_dump($msg);
+        $message = json_decode(trim($msg), true);
+        //sleep(1);
+        echo "MENSAJE PARSEADO \n";
         var_dump($message);
         if($message['type']==='init'){
             $this->permissions[] = [
                 'user' => $message['user'],
                 'resource' => $from->resourceId
             ];
-            //var_dump($this->permissions);
+            (new Model())->queryExec("UPDATE jugador SET enlinea = 1 WHERE id = ?", 
+            [intval($message['user'])]);
+            foreach($this->clients as $client){
+                if($client != $from){
+                    $client->send($msg);
+                }
+            }
         }
         $reciver = '';
         if($message['type']==='chat'){      
@@ -54,7 +62,6 @@ class Chat implements MessageComponentInterface {
             });
             (new Model())->queryExec("INSERT INTO chat(id_hablante, id_oyente, mensaje) values (?, ?, ?)", 
                 [$message['data']['id_hablante'], $message['data']['id_oyente'], $message['data']['message']]);
-            //echo "estado de la lista\n";
             if(!empty($reciver)){
                 $key = key($reciver);
                 foreach ($this->clients as $client) {
@@ -80,7 +87,15 @@ class Chat implements MessageComponentInterface {
                 return $element;
             }
         }));
+        (new Model())->queryExec("UPDATE jugador SET enlinea = 0 WHERE id = ?", 
+        [intval($this->permissions[$key]['user'])]);
+        foreach($this->clients as $client){
+            if($client != $conn){
+                $client->send(json_encode(['type'=>'close', 'close'=>$this->permissions[$key]]));
+            }
+        }
         unset($this->permissions[$key]);
+        sort($this->permissions);
         $this->clients->detach($conn);
         echo "Connection {$conn->resourceId} has disconnected\n";
     }
