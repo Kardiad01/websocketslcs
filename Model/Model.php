@@ -14,7 +14,7 @@ class Model extends PDO{
     public function __construct()
     {
         try{
-            $this->db = new PDO("mysql:host=" . $_ENV['DBHOST'].";dbname=" . $_ENV['DBNAME'] . ";charset=utf8", $_ENV['DBUSER'] , $_ENV['DBPASS'], [
+            $this->db = new PDO("mysql:host=" . $_ENV['DBHOST'].";dbname=" . $_ENV['DBNAME'] . ";charset=utf8mb4", $_ENV['DBUSER'] , $_ENV['DBPASS'], [
                 PDO::ATTR_PERSISTENT => true,
                 PDO::ATTR_ERRMODE =>true,
                 PDO::ERRMODE_EXCEPTION => true

@@ -30,7 +30,6 @@ class Chat implements MessageComponentInterface {
         echo "MENSAJE RECIBIDO \n";
         var_dump($msg);
         $message = json_decode(trim($msg), true);
-        //sleep(1);
         echo "MENSAJE PARSEADO \n";
         var_dump($message);
         if($message['type']==='init'){
