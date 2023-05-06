@@ -4,7 +4,7 @@
         "psr-4": {
             "MyApp\\": "App",
             "Model\\": "Model",
-            "Config\\" : "Config"
+            "Constants\\" : "Constants"
         }
     },
     "require": {
