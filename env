@@ -1,0 +1,4 @@
+HOST = localhost
+DBNAME = lascartasdesofia
+DBUSER = root
+DBPASS = ''

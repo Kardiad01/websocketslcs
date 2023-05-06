@@ -2,14 +2,13 @@
 
 namespace Server;
 
+use Dotenv;
 use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
 use Ratchet\WebSocket\WsServer;
-use Dotenv;
 use MyApp\Chat;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
-
 $dotenv = Dotenv\Dotenv::createImmutable(getcwd());
 $dotenv->load();
 $server = IoServer::factory(

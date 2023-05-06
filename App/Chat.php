@@ -32,6 +32,11 @@ class Chat implements MessageComponentInterface {
         $message = json_decode(trim($msg), true);
         echo "MENSAJE PARSEADO \n";
         var_dump($message);
+        if($message['type']=='accept' 
+            || $message['type']=='delete' 
+                || $message['type']=='request'){
+            $this->p2pShort($msg, $message);
+        }
         if($message['type']==='init'){
             $this->permissions[] = [
                 'user' => $message['user'],
@@ -103,6 +108,36 @@ class Chat implements MessageComponentInterface {
     public function onError(ConnectionInterface $conn, \Exception $e) {
         echo "An error has occurred: {$e->getMessage()}\n";
         $conn->close();
+    }
+
+    /**
+     * @method p2pShort() emite mensaje con id a usuario correspondiente
+     */
+    private function p2pShort($msg, $message){
+        $id_oyente = $message['id'];
+            $reciver = array_filter($this->permissions, function($element) use ($id_oyente){
+                if($element['user']===$id_oyente){
+                    echo "Elemento filtrado \n";
+                    var_dump($element);
+                    return $element;
+                }
+            });
+        if(!empty($reciver)){
+            $key = key($reciver);
+            foreach ($this->clients as $client) {
+                /*echo 'tipo de mensaje '.$message['type']."\n";
+                echo 'cliente '.$client->resourceId."\n";
+                echo "receptor ".$reciver[$key]['resource']."\n";*/
+                //Implementada la lógica para el tipo de mensaje que tiene que ser enviado y a la persona conectada que se tiene que enviar.
+                $key = key($reciver);
+                echo "RECIVER\n";
+                var_dump($reciver);
+                if ($client->resourceId == $reciver[$key]['resource']) {
+                    // The sender is not the receiver, send to each client connected
+                    $client->send($msg);
+                }
+            }
+        }
     }
 
 }
