@@ -1,15 +1,12 @@
 {
-    "name": "jnunez/websocketserver",
-    "autoload": {
+     "autoload": {
         "psr-4": {
             "MyApp\\": "App",
-            "Model\\": "Model",
-            "Config\\" : "Config"
+            "Model\\": "Model"
         }
     },
     "require": {
         "cboden/ratchet": "^0.4.4",
-        "vlucas/phpdotenv": "^5.5"
+          "vlucas/phpdotenv": "^5.5"
     }
-
 }
