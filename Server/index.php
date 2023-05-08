@@ -19,7 +19,7 @@ $server = IoServer::factory(
     ),
     8181
 );
-echo "Servidor abierto escuchando por el puerto 8181 direccion ws://localhost:8181 \n";
+echo "Servidor CHAT abierto escuchando por el puerto 8181 direccion ws://localhost:8181 \n";
 $server->run();
 
 ?>

@@ -34,7 +34,9 @@ class Chat implements MessageComponentInterface {
         var_dump($message);
         if($message['type']=='accept' 
             || $message['type']=='delete' 
-                || $message['type']=='request'){
+                || $message['type']=='request'
+                    || $message['type']=='duelrequest'
+                        || $message['type']==='aceptduel'){
             $this->p2pShort($msg, $message);
         }
         if($message['type']==='init'){
@@ -42,11 +44,20 @@ class Chat implements MessageComponentInterface {
                 'user' => $message['user'],
                 'resource' => $from->resourceId
             ];
+            $friends = json_decode($message['friends'], true);
+            echo "AMIGOS\n";
+            var_dump($friends);
             (new Model())->queryExec("UPDATE jugador SET enlinea = 1 WHERE id = ?", 
             [intval($message['user'])]);
-            foreach($this->clients as $client){
-                if($client != $from){
-                    $client->send($msg);
+            foreach($this->permissions as $user){
+                foreach($friends as $otheruser){
+                    if($user['user']==$otheruser['id_solicitante']){
+                        foreach($this->clients as $client){
+                            if($client->resourceId==$user['resource']){
+                                $client->send($msg);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -138,6 +149,10 @@ class Chat implements MessageComponentInterface {
                 }
             }
         }
+    }
+
+    private function rooms(){
+
     }
 
 }
