@@ -39,6 +39,9 @@ class Chat implements MessageComponentInterface {
                         || $message['type']==='aceptduel'){
             $this->p2pShort($msg, $message);
         }
+        if($message['type']==='aceptduel'){
+            $this->duplex($msg, $message, $from);
+        }
         if($message['type']==='init'){
             $this->permissions[] = [
                 'user' => $message['user'],
@@ -151,8 +154,19 @@ class Chat implements MessageComponentInterface {
         }
     }
 
-    private function rooms(){
-
+    private function duplex($msg, $message){
+        //$chalenge['user']==$message['id'] ||
+        $ids = array_map(function($chalenge) use($message){
+            if($chalenge['user']==$message['idr']){
+                return $chalenge['resource'];
+            }
+        },
+        $this->permissions);
+        foreach($this->clients as $client){
+            if(in_array($client->resourceId, $ids)){
+                $client->send($msg);
+            }
+        }
     }
 
 }
