@@ -22,6 +22,8 @@ class LasCartasDeSofia extends stdClass{
     private $chat;
     private $status = 'init';
     private $mana;
+    private $propietarioTurno;
+    private $coin;
 
     public function __construct($nombre_partida)
     {
@@ -60,8 +62,71 @@ class LasCartasDeSofia extends stdClass{
         $this->mazo['retado'] = $mazo_retado;
     }
 
+    public function getterPropietarioTurno(){
+        return $this->propietarioTurno;
+    }
+
     public function getterHabitacion(){
         return $this->nombre_partida;
+    }
+
+    ///ESTAMOS AQUI
+    public function setInMesa($jugador, $card){
+        $quienEsElJugadorQueJuega= '';
+        if($this->jugador_retado==$jugador){
+            $quienEsElJugadorQueJuega = 'retado';
+        }
+        if($this->jugador_retante==$jugador){
+            $quienEsElJugadorQueJuega = 'retante';
+        }
+        $carta = $this->getCartaMazo($card, $quienEsElJugadorQueJuega);
+        $carta = $this->getCartaMazo($card, $quienEsElJugadorQueJuega);
+        //Estos datos de cartas tienen que ser instanciados en la clase carta
+        $cartaJugada = new Carta($carta[key($carta)]);
+        $sePueJugar = $this->esjugable($cartaJugada, $quienEsElJugadorQueJuega)  && $this->consumirMana($cartaJugada->costo, $quienEsElJugadorQueJuega);
+        echo "\n ¿SE PUE JUGA?\n";
+        var_dump($sePueJugar);
+        if($sePueJugar){
+            $this->qutarDeMano($cartaJugada->id, $quienEsElJugadorQueJuega);
+            $this->mesa[$quienEsElJugadorQueJuega][] = $cartaJugada;
+            //carta jugada activa efecto.
+            echo "\n ESTA ES LA CARTA \n";
+            var_dump($this);
+        }
+    }
+
+    private function qutarDeMano($id_carta, $player){
+        $temp = array_filter($this->mano[$player], function($carta) use($id_carta){
+            if($carta->id != $id_carta){
+                return $carta;
+            }
+        });
+        $this->mano[$player] = $temp;
+    }
+
+    public function consumirMana($costoCarta, $player){
+        $currentMana = $this->mana[$player] - $costoCarta;
+        if($currentMana < 0){
+            return false;
+        }else{
+            $this->mana[$player] = $currentMana;
+            return true;
+        }
+    }
+
+    private function esJugable($cartaJugada, $tipo){
+        if($cartaJugada->costo<=$this->mana[$tipo]){
+            return true;
+        }
+        return false;
+    }
+
+    private function getCartaMazo($card, $player){
+        return array_filter($this->mano[$player], function($cartas) use($card){
+            if($cartas['id']==$card){
+                return $cartas;
+            }
+        });
     }
 
     public function getterJugadorRetante(){
@@ -91,15 +156,6 @@ class LasCartasDeSofia extends stdClass{
         ];        
     }
 
-    public function consumirMana($costoCarta, $player){
-        $currentMana = $this->mana[$player] - $costoCarta;
-        if($currentMana < 0){
-            return 'No puedes jugar esa carta';
-        }else{
-            $this->mana[$player] = $currentMana;
-        }
-    }
-
     public function setStatus($status){
         if($this->status!=$status){
             $this->status = $status;
@@ -116,6 +172,12 @@ class LasCartasDeSofia extends stdClass{
         for($x=0; $x<5; $x++){
             $this->mano['retante'][] = array_shift($this->mazo['retante']);
             $this->mano['retado'][] = array_shift($this->mazo['retado']);
+        }
+        $this->coin = rand(0, 10);
+        if($this->coin>=4){
+            $this->propietarioTurno = $this->jugador_retado;
+        }else{
+            $this->propietarioTurno = $this->jugador_retante;
         }
     }
 
