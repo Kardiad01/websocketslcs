@@ -38,8 +38,8 @@ class LasCartasDeSofia extends stdClass{
         $this->replicas_usadas['retado'] = [];
         $this->contrareplicas_usadas['retante'] = [];
         $this->contrareplicas_usadas['retado'] = [];
-        $this->puntos_conviccion['retante'] = [];
-        $this->puntos_conviccion['retado'] = [];
+        $this->puntos_conviccion['retante'] = 0;
+        $this->puntos_conviccion['retado'] = 0;
         $this->win_conditions_disponibles['retante'] = [];
         $this->win_conditions_disponibles['retado'] = [];
         $this->win_condition_realizada['retado'] = [];
@@ -80,27 +80,65 @@ class LasCartasDeSofia extends stdClass{
             $quienEsElJugadorQueJuega = 'retante';
         }
         $carta = $this->getCartaMazo($card, $quienEsElJugadorQueJuega);
-        $carta = $this->getCartaMazo($card, $quienEsElJugadorQueJuega);
         //Estos datos de cartas tienen que ser instanciados en la clase carta
         $cartaJugada = new Carta($carta[key($carta)]);
-        $sePueJugar = $this->esjugable($cartaJugada, $quienEsElJugadorQueJuega)  && $this->consumirMana($cartaJugada->costo, $quienEsElJugadorQueJuega);
-        echo "\n ¿SE PUE JUGA?\n";
-        var_dump($sePueJugar);
+        echo "\n JUGADOR $quienEsElJugadorQueJuega SELECCIONA CARTA \n".var_dump($cartaJugada);
+        $sePueJugar = $this->esjugable($cartaJugada, $quienEsElJugadorQueJuega) 
+            && $this->consumirMana($cartaJugada->costo, $quienEsElJugadorQueJuega)
+            && $this->referenciaEnCampo($cartaJugada, $quienEsElJugadorQueJuega);
         if($sePueJugar){
             $this->qutarDeMano($cartaJugada->id, $quienEsElJugadorQueJuega);
+            $this->activarEfecto($cartaJugada, $jugador);
             $this->mesa[$quienEsElJugadorQueJuega][] = $cartaJugada;
-            //carta jugada activa efecto.
-            echo "\n ESTA ES LA CARTA \n";
-            var_dump($this);
+
         }
+    }
+
+    private function referenciaEnCampo($carta, $jugador){
+        if($carta->referencia!=null && $carta->referencia!=""){
+            $nombre = $carta->nombre;
+            $filtro = array_filter($this->mazo[$jugador], function($cartas) use($nombre){
+                if($cartas['nombre']===$nombre){
+                    return $cartas;
+                }
+            });
+            if(count($filtro)>0){
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private function activarEfecto($carta, $id){
+        $jugador = '';
+        $oponente = '';
+        if($id===$this->jugador_retado){
+            $jugador = 'retado';
+            $oponente = 'retante';
+        }else if($id===$this->jugador_retante){
+            $jugador = 'retante';
+            $oponente = 'retado';
+        }
+        if($carta->contra!=0 && $carta->contra!=null) $this->puntos_conviccion[$oponente] -= $carta->contra;
+        if($carta->beneficio!=0 && $carta->beneficio!=null) $this->puntos_conviccion[$jugador] -= $carta->beneficio;
+        if($carta->roba>0){
+            for($x=0; $x<$carta->roba; $x++){
+                $this->robarCarta($id);
+            }
+        }
+        
+        
     }
 
     private function qutarDeMano($id_carta, $player){
         $temp = array_filter($this->mano[$player], function($carta) use($id_carta){
-            if($carta->id != $id_carta){
+            if($carta['id'] != $id_carta){
                 return $carta;
             }
         });
+        echo "\n CARTA JUGADA \n";
+        //var_dump($temp);
         $this->mano[$player] = $temp;
     }
 
@@ -115,7 +153,7 @@ class LasCartasDeSofia extends stdClass{
     }
 
     private function esJugable($cartaJugada, $tipo){
-        if($cartaJugada->costo<=$this->mana[$tipo]){
+        if($cartaJugada->costo<=$this->mana[$tipo] && $cartaJugada->tipo === $this->status){
             return true;
         }
         return false;
@@ -127,6 +165,10 @@ class LasCartasDeSofia extends stdClass{
                 return $cartas;
             }
         });
+    }
+
+    private function robarCarta($player){
+        $this->mano[$player][] = array_shift($this->mazo[$player]);
     }
 
     public function getterJugadorRetante(){
@@ -181,52 +223,32 @@ class LasCartasDeSofia extends stdClass{
         }
     }
 
-    public function endPartida(){
-        $this->nombre_partida = '';
-        $this->mazo['retante'] = '';
-        $this->mazo['retado'] = '';   
-        $this->mano['retante'] = [];
-        $this->mano['retado'] = [];
-        $this->mesa['retante'] = [];
-        $this->mesa['retado'] = [];
-        $this->replicas_usadas['retante'] = [];
-        $this->replicas_usadas['retado'] = [];
-        $this->contrareplicas_usadas['retante'] = [];
-        $this->contrareplicas_usadas['retado'] = [];
-        $this->puntos_conviccion['retante'] = [];
-        $this->puntos_conviccion['retado'] = [];
-        $this->win_conditions_disponibles['retante'] = [];
-        $this->win_conditions_disponibles['retado'] = [];
-        $this->win_condition_realizada['retado'] = [];
-        $this->win_condition_realizada['retante'] = [];
-        $this->total_cartas_diponibles['retado'] = [];
-        $this->total_cartas_diponibles['retante'] = [];
-        $this->turno = 0;
-        $this->chat=[];
-    }
-
-    public function partidaToString(){
+    public function partidaToString($id){
+        $jugador = '';
+        $oponente = '';
+        if($id===$this->jugador_retado){
+            $jugador = 'retado';
+            $oponente = 'retante';
+        }else if($id===$this->jugador_retante){
+            $jugador = 'retante';
+            $oponente = 'retado';
+        }
         return json_encode([
-            'nombre_partida'=>$this->nombre_partida, 
-            'mazoRetante'=>$this->mazo['retante'],
-            'mazoRetado'=>['retado'] ,
-            'manoRetante'=>$this->mano['retante'],
-            'manoRetado'=>$this->mano['retado'],
-            'mesaRetante'=>$this->mesa['retante'],
-            'mesaRetado'=>$this->mesa['retado'],
-            'replicasUsadasRetante'=>$this->replicas_usadas['retante'],
-            'replicasUsadasRetado'=>$this->replicas_usadas['retado'],
-            'contrareplicasUsadasRetante'=>$this->contrareplicas_usadas['retante'],
-            'contrareplicasUsadasRetado'=>$this->contrareplicas_usadas['retado'],
-            'puntosConviccionRetante'=>$this->puntos_conviccion['retante'],
-            'puntosConviccionRetado'=>$this->puntos_conviccion['retado'],
-            'winConditionsDisponiblesRetante'=>$this->win_conditions_disponibles['retante'],
-            'winConditionsDisponiblesRetado'=>$this->win_conditions_disponibles['retado'],
-            'winConditionsRealizadaRetado'=>$this->win_condition_realizada['retado'],
-            'winConditionsRealizadaRetante'=>$this->win_condition_realizada['retante'],
-            'totalCartasDisponiblesRetado'=>$this->total_cartas_diponibles['retado'],
-            'totalCartasDisponiblesRetante'=>$this->total_cartas_diponibles['retante'],
-            'turno'=>$this->turno,
+            'nombre_partida' => $this->nombre_partida,
+            'id_jugador' => ($this->jugador_retado===$id)?$this->jugador_retado:$this->jugador_retante,
+            'rol' => $jugador,
+            'oponente' => $oponente,
+            "mano" => $this->mano[$jugador],
+            'mesa' => $this->mesa,
+            'replicas_usadas' => $this->replicas_usadas,
+            'contrareplicas_usadas' => $this->contrareplicas_usadas,
+            'puntos_conviccion' => $this->puntos_conviccion,
+            'turno' => $this->turno,
+            'chat' => $this->chat,
+            'type' => $this->status,
+            'propietario_turno' => $this->propietarioTurno,
+            'cartas_mano_oponente' => count($this->mano[$oponente]),
+            'mana' => $this->mana
         ]);
     }
 }

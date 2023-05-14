@@ -32,16 +32,40 @@ class Carta{
     }
 
     private function setBusca($param){
+        echo "\n PARAM ENTRANTE \n";
+        var_dump($param);
+        echo "\n PARAM CHOPEADO \n";
         $temp = explode('|', $param);
-        if(empty($temp)){
-            $temp = explode('@', $param);
+        var_dump($temp);
+        if(count($temp)>1){
+            echo "\n BUSCO MIERDA VARIADA\n";
+            $tempcant = [];
+            $temptipo = [];
+            foreach($temp as $find){
+                $temp = explode('@', $find);
+                $tempcant[] = intval($temp[0]);
+                $temptipo[] = $temp[1];
+            }
             $this->busca = new stdClass;
-            $this->busca->cantidad = intval($temp[0]);
-            $this->busca->tipo = $temp[1];
+            $this->busca->cantidad = $tempcant;
+            $this->busca->tipo = $temptipo;
+            return;
         }
-    }
-
-    public function activarEfecto(){
+        $temp = explode('@', $param);
+        if(count($temp)>1){
+            echo "\n BUSCO UNA MIERDA PERO VARIAS\n";
+            $this->busca = new stdClass;
+            $this->busca->cantidad = explode('@', $param)[0];
+            $this->busca->tipo = explode('@', $param)[1];
+            return;
+        }
+        if(!str_contains('@', $param)){
+            echo "\n BUSCO UNICA MIERDA\n";
+            $this->busca = new stdClass;
+            $this->busca->cantidad = 0;
+            $this->busca->tipo = $param;
+            return;
+        }
     }
 
 }
