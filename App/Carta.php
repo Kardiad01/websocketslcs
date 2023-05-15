@@ -29,6 +29,20 @@ class Carta{
         $this->turno = $params['turnos'];
         $this->descripcion = $params['descripcion'];
         $this->setBusca($params['busca']);
+        $this->setReferencia($params['referencia']);
+    }
+
+    private function setReferencia($param){
+        echo "\n PARAM ENTRANTE REFERENCIA\n";
+        var_dump($param);
+        $temp = explode('|', $param);
+        echo "\n PARAM SALIENTE TRAS CHOPEO\n";
+        var_dump($temp);
+        if(count($temp)>1){
+            $this->referencia = $temp;
+        }else{
+            $this->referencia = intval($param);
+        }
     }
 
     private function setBusca($param){
@@ -66,6 +80,7 @@ class Carta{
             $this->busca->tipo = $param;
             return;
         }
+        $this->busca = null;
     }
 
 }

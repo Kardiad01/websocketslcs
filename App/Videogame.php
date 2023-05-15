@@ -34,8 +34,8 @@ class Videogame implements MessageComponentInterface {
         $existeSala = $this->existeSala($mesage['room']);
         if($mesage['type']==='askstatus'){
             $from->id_user = $mesage['user'];
-            echo "ESTADO DE LA SALA EN ASKTATUS\n";
-            /*var_dump($existeSala);*/
+            /*echo "ESTADO DE LA SALA EN ASKTATUS\n";
+            var_dump($existeSala);*/
             if($existeSala===false){
                 $nuevaPartida = new LasCartasDeSofia($mesage['room']);
                 echo "SALA CREADA CON ÉXITO\n";
@@ -63,15 +63,23 @@ class Videogame implements MessageComponentInterface {
         if($mesage['type']==='concepto'){
             $user1 = $existeSala->getterJugadorRetado();
             $user2 = $existeSala->getterJugadorRetante();
-            echo "\nSTATUS\n";
-            echo $existeSala->getStatus();
             $existeSala->setStatus($mesage['type']);
-            echo "\nSTATUS TRAS SET STATUS\n";
-            ECHO $existeSala->getStatus();
             $existeSala->setInMesa($mesage['id_jugador'], $mesage['id_carta']);
             $this->p2p($user1, $existeSala);
             $this->p2p($user2, $existeSala);
         }
+
+        if($mesage['type']==='replica' 
+            && $mesage['id_jugador']!=$existeSala->getterPropietarioTurno()
+                && $existeSala->getStatus()==='concepto'){
+                $user1 = $existeSala->getterJugadorRetado();
+                $user2 = $existeSala->getterJugadorRetante();         
+                $existeSala->setStatus($mesage['type']);
+                $existeSala->setInMesa($mesage['id_jugador'], $mesage['id_carta']);
+                $this->p2p($user1, $existeSala);
+                $this->p2p($user2, $existeSala);
+        }
+        
         echo "\nEND LOG \n----------------------------------------------------------------------------------------------------------------------------------------";
 
     }
@@ -145,6 +153,7 @@ class Videogame implements MessageComponentInterface {
      * santa ley de mis cojones al viento
      */
     private function p2p($user, $room){
+        echo "\nEMITIENDO MENSAJES\n";
         //este foreach es para emitir la información al jugador correspondiente.
         foreach($this->clients as $player){
             if($player->id_user == $user){

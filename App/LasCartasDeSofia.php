@@ -87,11 +87,16 @@ class LasCartasDeSofia extends stdClass{
             && $this->consumirMana($cartaJugada->costo, $quienEsElJugadorQueJuega)
             && $this->referenciaEnCampo($cartaJugada, $quienEsElJugadorQueJuega);
         if($sePueJugar){
+            $currentMana = $this->mana[$quienEsElJugadorQueJuega] - $cartaJugada->costo;
+            $this->mana[$quienEsElJugadorQueJuega] = $currentMana;
             $this->qutarDeMano($cartaJugada->id, $quienEsElJugadorQueJuega);
             $this->activarEfecto($cartaJugada, $jugador);
             $this->mesa[$quienEsElJugadorQueJuega][] = $cartaJugada;
-
         }
+        echo "\n ESTADO DE LA MESA \n";
+        var_dump($this->mesa);
+        echo "\n Estado de la mano \n";
+        var_dump($this->mano);
     }
 
     private function referenciaEnCampo($carta, $jugador){
@@ -110,25 +115,67 @@ class LasCartasDeSofia extends stdClass{
         return true;
     }
 
+    private function recursiveRandom($numbers){
+        echo "\n NUMEROS CANDIDATOS \n";
+        var_dump($numbers);
+        return $numbers[rand(0, count($numbers)-1)];
+    }
+
     private function activarEfecto($carta, $id){
         $jugador = '';
         $oponente = '';
-        if($id===$this->jugador_retado){
+        echo "\n cosas entrantes \n";
+        var_dump($carta, $id);
+        echo "\n CARTA A JUGAR \n";
+        var_dump($carta);
+        if($id==$this->jugador_retado){
+            echo "tenemos retado";
             $jugador = 'retado';
             $oponente = 'retante';
-        }else if($id===$this->jugador_retante){
+        }else if($id==$this->jugador_retante){
+            echo "tenemos retante";
             $jugador = 'retante';
             $oponente = 'retado';
         }
-        if($carta->contra!=0 && $carta->contra!=null) $this->puntos_conviccion[$oponente] -= $carta->contra;
-        if($carta->beneficio!=0 && $carta->beneficio!=null) $this->puntos_conviccion[$jugador] -= $carta->beneficio;
+        if($carta->contra!=0 && $carta->contra!=null){
+            $this->puntos_conviccion[$oponente] -= $carta->contra;
+        } 
+        if($carta->beneficio!=0 && $carta->beneficio!=null){
+            $this->puntos_conviccion[$jugador] += $carta->beneficio;
+        } 
         if($carta->roba>0){
             for($x=0; $x<$carta->roba; $x++){
-                $this->robarCarta($id);
+                $this->robarCarta($jugador);
             }
         }
-        
-        
+        $busca = $carta->busca;
+        if($busca!=0 && $busca!=null){
+            $tipo = $carta->busca->tipo;
+            $cantidad = $carta->busca->cantidad;
+            $candidates = array_filter($this->mazo[$jugador], function($element) use($tipo){
+                if($element['tipo']===$tipo){
+                    return $element;
+                }
+            });
+            $aux = 0;
+            $rand = $this->recursiveRandom(array_keys($candidates));
+            for($x=0; $x<$cantidad; $x++){
+                if($aux != $rand){
+                    $aux = $rand;
+                    $cartaBuscada = $candidates[$rand];
+                    echo "\n LA CARTA ALEATORIAMENTE SELECCIONADA \n";
+                    var_dump($cartaBuscada);
+                    //quita de candidatas
+                    unset($cartaBuscada[$rand]);
+                    //quita del mazo
+                    unset($this->mazo[$jugador][$rand]);
+                    $this->mano[$jugador][] = $cartaBuscada;
+                }else{
+                    $x--;
+                    $rand = $this->recursiveRandom(array_keys($candidates));
+                }
+            }            
+        }
     }
 
     private function qutarDeMano($id_carta, $player){
@@ -137,17 +184,15 @@ class LasCartasDeSofia extends stdClass{
                 return $carta;
             }
         });
-        echo "\n CARTA JUGADA \n";
-        //var_dump($temp);
         $this->mano[$player] = $temp;
     }
 
+    
     public function consumirMana($costoCarta, $player){
         $currentMana = $this->mana[$player] - $costoCarta;
         if($currentMana < 0){
             return false;
         }else{
-            $this->mana[$player] = $currentMana;
             return true;
         }
     }
@@ -233,7 +278,7 @@ class LasCartasDeSofia extends stdClass{
             $jugador = 'retante';
             $oponente = 'retado';
         }
-        return json_encode([
+        $mensaje_a_emitir = json_encode([
             'nombre_partida' => $this->nombre_partida,
             'id_jugador' => ($this->jugador_retado===$id)?$this->jugador_retado:$this->jugador_retante,
             'rol' => $jugador,
@@ -250,6 +295,7 @@ class LasCartasDeSofia extends stdClass{
             'cartas_mano_oponente' => count($this->mano[$oponente]),
             'mana' => $this->mana
         ]);
+        return $mensaje_a_emitir;
     }
 }
 
