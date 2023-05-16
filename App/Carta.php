@@ -33,11 +33,11 @@ class Carta{
     }
 
     private function setReferencia($param){
-        echo "\n PARAM ENTRANTE REFERENCIA\n";
+        /*echo "\n PARAM ENTRANTE REFERENCIA\n";
         var_dump($param);
-        $temp = explode('|', $param);
         echo "\n PARAM SALIENTE TRAS CHOPEO\n";
-        var_dump($temp);
+        var_dump($temp);*/
+        $temp = explode('|', $param);
         if(count($temp)>1){
             $this->referencia = $temp;
         }else{
@@ -46,9 +46,9 @@ class Carta{
     }
 
     private function setBusca($param){
-        echo "\n PARAM ENTRANTE \n";
+        /*echo "\n PARAM ENTRANTE \n";
         var_dump($param);
-        echo "\n PARAM CHOPEADO \n";
+        echo "\n PARAM CHOPEADO \n";*/
         $temp = explode('|', $param);
         var_dump($temp);
         if(count($temp)>1){

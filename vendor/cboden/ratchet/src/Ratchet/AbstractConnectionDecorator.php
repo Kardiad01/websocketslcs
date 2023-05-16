@@ -12,6 +12,8 @@ abstract class AbstractConnectionDecorator implements ConnectionInterface {
      */
     protected $wrappedConn;
 
+    protected $id_user;
+
     public function __construct(ConnectionInterface $conn) {
         $this->wrappedConn = $conn;
     }
