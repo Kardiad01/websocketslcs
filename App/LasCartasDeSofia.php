@@ -92,9 +92,9 @@ class LasCartasDeSofia extends stdClass{
         }
         if(count($this->mazo[$jugador])>0){
             $this->mano[$jugador][] = array_shift($this->mazo[$jugador]);
-        }else{
-            //u luuuse
         }
+        echo "\nmano tras robar carta\n";
+        var_dump($this->mano[$jugador]);
     }
 
     ///ESTAMOS AQUI
@@ -202,22 +202,21 @@ class LasCartasDeSofia extends stdClass{
             $jugador = 'retante';
             $oponente = 'retado';
         }
+        echo "\n Quitando puntos \n";
         if($carta->contra!=0 && $carta->contra!=null){
             $this->puntos_conviccion[$oponente] -= $carta->contra;
         } 
+        echo "\n Ganando puntos \n";
         if($carta->beneficio!=0 && $carta->beneficio!=null){
             $this->puntos_conviccion[$jugador] += $carta->beneficio;
         } 
+        echo "\n Robando carta \n";
         if($carta->roba>0){
             for($x=0; $x<$carta->roba; $x++){
-                $quedanCartas = $this->robarCarta($jugador);
-                if($quedanCartas){
-                    //se pue huga hulio
-                }else{
-                    //jajaj xd termina partida por deckout
-                }
+                $this->robarCarta($jugador);
             }
         }
+        echo "\n Bucando carta por tipo \n";
         $busca = $carta->busca;
         if($busca->cantidad!=0 && $busca->cantidad!=null){
             $tipo = $carta->busca->tipo;
@@ -248,9 +247,12 @@ class LasCartasDeSofia extends stdClass{
                 }            
             }
         }
-        if($busca->cantidad==0 && gettype(intval($busca->tipo))==='number'){
+        echo "\n Bucando carta individual \n";
+        if($busca->cantidad==0 && intval(($busca->tipo)>0)){
             foreach($this->mazo[$jugador] as $cartas){
                 if($cartas['id']==$busca->tipo){
+                    echo "\n carta encontrada\n";
+                    echo "\n $cartas->nombre \n";
                     $this->mano[$jugador][] = $cartas;
                 }
             }
@@ -354,13 +356,13 @@ class LasCartasDeSofia extends stdClass{
     }
 
     private function testWinCondition(){
-        if($this->puntos_conviccion['retante']>10){
+        if($this->puntos_conviccion['retante']>=10){
             $this->ganador = $this->jugador_retante;
             $this->status = 'finpartida';
         }
-        if($this->puntos_conviccion['retado']>10){
+        if($this->puntos_conviccion['retado']>=10){
             $this->ganador = $this->jugador_retado;
-            $this->tatus = 'finpartida';
+            $this->status = 'finpartida';
         }
         if(count($this->mazo['retante'])==0 && count($this->mazo['retado'])==0){
             $this->ganador = 'empate';

@@ -34,50 +34,48 @@ class Videogame implements MessageComponentInterface {
         $existeSala = $this->existeSala($mesage['room']);
         if($mesage['type']==='askstatus'){
             $from->id_user = $mesage['user'];
-            /*echo "ESTADO DE LA SALA EN ASKTATUS\n";
-            var_dump($existeSala);*/
+            echo "\n entro en askstatus\n";
             if($existeSala===false){
                 $nuevaPartida = new LasCartasDeSofia($mesage['room']);
                 echo "SALA CREADA CON ÉXITO\n";
-                //var_dump($nuevaPartida);
                 $this->rooms->attach($nuevaPartida);                
                 $this->p2p($mesage['user'], $nuevaPartida);
                 echo "\nJUGADOR 1 METIDO DE MANERA CORRECTA\n";
             }else if($existeSala->getStatus()!='init'){
-                //$user1 = $existeSala->getterJugadorRetado();
-                //$user2 = $existeSala->getterJugadorRetante();
                 $this->p2p($from->id_user, $existeSala);
-                //$this->p2p($user2, $existeSala);
             }else{
                 $this->p2p($mesage['user'], $existeSala);
                 echo "\nJUGADOR 2 METIDO DE MANERA CORRECTA\n";
             }
         }
-        if($mesage['type']==='start'){         
-            $this->anadirJugador($mesage['room'], $mesage['user'], $mesage['mazo']);
-            $user1 = $existeSala->getterJugadorRetante();
-            $user2 = $existeSala->getterJugadorRetado();
-            if($user1!=null && $user2!=null){
-                $this->initPartida($mesage['room'], $from);
-                echo "\nPARTIDA INICIADA CORRECTAMENTE\n";
-            }
-            /*echo "ESTADO DE LA SALA EN START\n";
-            var_dump($existeSala);*/
+        if($existeSala!= null 
+            && $mesage['type']==='start'){   
+                echo "\n entro en start\n";      
+                $this->anadirJugador($mesage['room'], $mesage['user'], $mesage['mazo']);
+                $user1 = $existeSala->getterJugadorRetante();
+                $user2 = $existeSala->getterJugadorRetado();
+                if($user1!=null && $user2!=null){
+                    $this->initPartida($mesage['room']);
+                    echo "\nPARTIDA INICIADA CORRECTAMENTE\n";
+                }
         }
         
-        if($mesage['type']==='concepto' 
+        if($existeSala!= null 
+            && $mesage['type']==='concepto' 
             && $existeSala->getterPropietarioTurno()==$mesage['id_jugador']){
+                echo "\n entro en concepto\n";
                 $user1 = $existeSala->getterJugadorRetado();
                 $user2 = $existeSala->getterJugadorRetante();
-                //$existeSala->setStatus($mesage['type']);
                 $existeSala->setInMesa($mesage['id_jugador'], $mesage['id_carta'], $mesage['type']);
                 $this->p2p($user1, $existeSala);
                 $this->p2p($user2, $existeSala);
         }
 
-        if($mesage['type']==='replica' 
+        if($mesage['type']==='replica'
+            && $existeSala!= null 
             && $mesage['id_jugador']!=$existeSala->getterPropietarioTurno()
             && $existeSala->getStatus()==='concepto'){
+                echo "\n entro en replica\n";
                 $user1 = $existeSala->getterJugadorRetado();
                 $user2 = $existeSala->getterJugadorRetante();         
                 //$existeSala->setStatus($mesage['type']);
@@ -86,8 +84,10 @@ class Videogame implements MessageComponentInterface {
                 $this->p2p($user2, $existeSala);
         }
         if($mesage['type']==='contrareplica'
+            && $existeSala!= null 
             && $mesage['id_jugador']==$existeSala->getterPropietarioTurno()
             && $existeSala->getStatus()==='replica'){
+                echo "\n entro en contraréplica\n";
                 $user1 = $existeSala->getterJugadorRetado();
                 $user2 = $existeSala->getterJugadorRetante();         
                 //$existeSala->setStatus($mesage['type']);
@@ -95,21 +95,29 @@ class Videogame implements MessageComponentInterface {
                 $this->p2p($user1, $existeSala);
                 $this->p2p($user2, $existeSala);
             }
-        if($mesage['type']==='finturno' && $existeSala->getterPropietarioTurno()==$mesage['id_jugador']){
-            $user1 = $existeSala->getterJugadorRetado();
-            $user2 = $existeSala->getterJugadorRetante();
-            if($user1!=$existeSala->getterPropietarioTurno()){
-                $existeSala->setPropietarioTurno($user1);
-            }else{
-                $existeSala->setPropietarioTurno($user2);
-            }
-            $existeSala->resetMana();
-            $existeSala->propietarioRobaCarta();
-            $this->p2p($user1, $existeSala);
-            $this->p2p($user2, $existeSala);
+        if($mesage['type']==='finturno' 
+            && $existeSala!= null 
+            && $existeSala->getterPropietarioTurno()==$mesage['id_jugador']){
+                echo "\n entro en finturno\n";
+                $user1 = $existeSala->getterJugadorRetado();
+                $user2 = $existeSala->getterJugadorRetante();
+                if($user1!=$existeSala->getterPropietarioTurno()){
+                    $existeSala->setPropietarioTurno($user1);
+                }else{
+                    $existeSala->setPropietarioTurno($user2);
+                }
+                $existeSala->resetMana();
+                $existeSala->propietarioRobaCarta();
+                $existeSala->setStatus('finturno');
+                $this->p2p($user1, $existeSala);
+                $this->p2p($user2, $existeSala);
         }
         if($mesage['type']==='finpartida'){
-            //Se da de baja a la sala
+            $removedRoom = $this->existeSala($mesage['room']);
+            if($removedRoom!=null){
+                $this->rooms->detach($removedRoom);
+            }
+            var_dump($this->rooms);
         }
         if($mesage['type']==='surrender'){
 
@@ -120,6 +128,7 @@ class Videogame implements MessageComponentInterface {
     }
 
     public function onClose(ConnectionInterface $conn) {
+        var_dump($this->rooms);
         echo "\n User ($conn->resourceId) disconected";
     }
 
@@ -136,7 +145,7 @@ class Videogame implements MessageComponentInterface {
         return $bool;
     }
 
-    private function initPartida($room, $from){
+    private function initPartida($room){
         //encuentra la sala correcta y mezcla los mazos y rescato la sala para reutilizarla
         $correctRoom = new stdClass;
         foreach($this->rooms as $availablerooms){
