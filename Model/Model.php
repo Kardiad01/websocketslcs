@@ -14,7 +14,7 @@ class Model extends PDO{
     public function __construct()
     {
         try{
-            $this->db = new PDO("mysql:host=" . $_ENV['DBHOST'].";dbname=" . $_ENV['DBNAME'] . ";charset=utf8mb4", $_ENV['DBUSER'] , $_ENV['DBPASS'], [
+            $this->db = new PDO("mysql:host=" . $_ENV['HOST'].";dbname=" . $_ENV['DBNAME'] . ";charset=utf8mb4", $_ENV['DBUSER'] , $_ENV['DBPASS'], [
                 PDO::ATTR_PERSISTENT => true,
                 PDO::ATTR_ERRMODE =>true,
                 PDO::ERRMODE_EXCEPTION => true
@@ -27,6 +27,8 @@ class Model extends PDO{
 
     public function queryExec($sql, array $params = []) {
         try{
+            echo "PARAMETROS ENTRANTES \n";
+            print_r($params);
             $stmt = $this->db->prepare($sql);
             for ($x = 0; $x < count($params); $x++) {
                 $stmt->bindParam($x+1, $params[$x], $this->tipo($params[$x]));

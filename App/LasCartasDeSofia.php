@@ -2,6 +2,8 @@
 
 namespace MyApp;
 
+use Exception;
+use Model\Model;
 use stdClass;
 
 class LasCartasDeSofia extends stdClass{
@@ -25,6 +27,7 @@ class LasCartasDeSofia extends stdClass{
     private $propietarioTurno;
     private $coin;
     private $ganador; 
+    private $perdedor;
 
     public function __construct($nombre_partida)
     {
@@ -355,13 +358,91 @@ class LasCartasDeSofia extends stdClass{
         }
     }
 
+    private function updateDatabase(){
+        $j1 = '';
+        $j1 = '';
+        try{
+            $j1 = (new Model())->queryExec('SELECT * from jugador where jugador.id = ?', [(int)$this->jugador_retado])[0];
+            $j2 = (new Model())->queryExec('SELECT * from jugador where jugador.id = ?', [(int)$this->jugador_retante])[0];
+        }catch(Exception $e){
+            throw $e;
+        }
+       if($this->ganador=='empate'){
+        try{
+            (new Model())->queryExec('UPDATE debate set empate = ? , jugable = ? where recurso = ? ', [1, $this->nombre_partida]);
+        }catch(Exception $e){
+            throw $e;
+        }
+           $data = [];
+           $data[0] = [];
+           $data[1] = [];
+           $data[0][0] = ($j1->debates_realizados==null)?$j1->debates_realizados==1:$j1->debates_realizados++;
+           $data[0][1] = ($data['j1']->dinero==null)?$j1->dinero==1:$j1->dinero++;
+           $data[0][2] = $this->jugador_retado;
+           $data[0][0] = ($j2->debates_realizados==null)?$j1->debates_realizados==1:$j2->debates_realizados++;
+           $data[0][1] = ($data['j1']->dinero==null)?$j2->dinero==1:$j2->dinero++;
+           $data[0][2] = $this->jugador_retante;
+           foreach($data as $stats){
+                try{
+                    (new Model())->queryExec('UPDATE jugador 
+                        set debates_realizados = ? , dinero = ? 
+                        where id = ?', [$stats]);
+                }catch(Exception $e){
+                    throw $e;
+                }
+           }
+       }else{
+            try{
+                (new Model())->queryExec('UPDATE debate set ganador = ? , perdedor = ? , jugable = 0 where recurso = ?', [(int)$this->ganador, (int)$this->perdedor, $this->nombre_partida]);
+                $ganador = (new Model())->queryExec('SELECT * from jugador where id = ?', [(int)$this->ganador])[0];
+                $perdedor = (new Model())->queryExec('SELECT * from jugador where id = ?', [(int)$this->perdedor])[0];
+                $data = [];
+                $data[0] = [];
+                $data[1] = [];
+                if($ganador->debates_ganados == null){
+                    $data[0][0] = 1;
+                }else{
+                    $data[0][0] = intval($ganador->debates_ganados) + 1;
+                }
+                if($perdedor->debates_perdidos == null){
+                    $data[1][0] = 1;
+                }else{
+                    $data[1][0] = intval($perdedor->debates_perdidos) + 1;
+                }
+                $data[0][1] = intval($ganador->elo)+10;
+                $data[0][2] = intval($ganador->dinero)+2;
+                $data[0][3] = intval($this->ganador);
+                $data[1][1] = intval($perdedor->elo)-10;
+                $data[1][2] = intval($perdedor->dinero)+1;
+                $data[1][3] = $this->perdedor;
+                echo "\n";
+                print_r($data);
+                echo "\n";
+                (new Model())->queryExec('UPDATE jugador set 
+                    debates_perdidos = ? , 
+                    elo = ? , 
+                    dinero = ? 
+                    where id = ?', $data[0]);
+                (new Model())->queryExec('UPDATE jugador set
+                    debates_perdidos = ? , 
+                    elo = ? , 
+                    dinero = ? 
+                    where id = ?', $data[1]);
+            }catch(Exception $e){
+                throw $e;
+            } 
+       }
+    }
+
     private function testWinCondition(){
         if($this->puntos_conviccion['retante']>=10){
             $this->ganador = $this->jugador_retante;
+            $this->perdedor = $this->jugador_retado;
             $this->status = 'finpartida';
         }
         if($this->puntos_conviccion['retado']>=10){
             $this->ganador = $this->jugador_retado;
+            $this->perdedor = $this->jugador_retante;
             $this->status = 'finpartida';
         }
         if(count($this->mazo['retante'])==0 && count($this->mazo['retado'])==0){
@@ -398,8 +479,12 @@ class LasCartasDeSofia extends stdClass{
             'cartas_mazo_oponente' => count($this->mazo[$oponente]),
             'cartas_mazo_jugador'=> count($this->mazo[$jugador]),
             'mana' => $this->mana,
-            'ganador' => $this->ganador
+            'ganador' => $this->ganador,
+            'perdedor' => $this->perdedor
         ]);
+        if($this->status === 'finpartida'){
+           $this->updateDatabase();
+        }
         return $mensaje_a_emitir;
     }
 }
